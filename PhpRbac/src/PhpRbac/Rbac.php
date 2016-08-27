@@ -13,20 +13,57 @@ use \Jf;
  */
 class Rbac
 {
-    public function __construct($unit_test = '')
-    {
-        if ((string) $unit_test === 'unit_test') {
-            require_once dirname(dirname(__DIR__)) . '/tests/database/database.config';
-        } else {
-            require_once dirname(dirname(__DIR__)) . '/database/database.config';
-        }
+	/**
+	 * Rbac constructor.
+	 *
+	 * @param string | array | \PDO | \mysqli $dbOption
+	 * 1. unit_test
+	 * 2. db配置参数数组
+	 * 3. pdo/mysqli的数据库对象
+	 * @param string $tablePrefix 只有在$dbOption是对象时才需要
+	 *
+	 * @throws \Exception
+	 */
+	public function __construct($dbOption, $tablePrefix = '')
+	{
+		if (is_string($dbOption) && $dbOption === 'unit_test') {
+			require_once dirname(dirname(__DIR__)) . '/tests/database/database.config';
+		}
 
-        require_once 'core/lib/Jf.php';
+		// 每次都会新建一个数据库连接
+		if (is_array($dbOption)) {
+			/**
+			 * 'host'=>'localhost',
+			 * 'user'=>'',
+			 * 'pass'=>'',
+			 * 'dbname'=>'',
+			 * 'adapter'=>'pdo_mysql|mysqli|pdo_sqlite',
+			 * 'tablePrefix'=>'phprbac_'
+			 */
+			// extract db config variable
+			extract($dbOption);
+			if (empty($host) || empty($user) || empty($pass) || empty($dbname) || empty($adapter) || empty($tablePrefix)) {
+				throw new \Exception('dbOption param is wrong');
+			}
+		}
 
-        $this->Permissions = Jf::$Rbac->Permissions;
-        $this->Roles = Jf::$Rbac->Roles;
-        $this->Users = Jf::$Rbac->Users;
-    }
+		require_once 'core/lib/Jf.php';
+
+		// 若是可用的数据库对象,则复用数据库连接
+		if (is_object($dbOption) && ($dbOption instanceof \mysqli || $dbOption instanceof \PDO)) {
+			Jf::$Db = $dbOption;
+			if (empty($tablePrefix)) {
+				throw new \Exception('tablePredix param cannot be empty');
+			}
+		}
+		if (Jf::$Db === null) {
+			require_once __DIR__ . "/core/setup.php";
+		}
+
+		$this->Permissions = Jf::$Rbac->Permissions;
+		$this->Roles = Jf::$Rbac->Roles;
+		$this->Users = Jf::$Rbac->Users;
+	}
 
     public function assign($role, $permission)
     {
