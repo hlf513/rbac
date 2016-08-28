@@ -1,19 +1,38 @@
 {
 	"name" : "hlf513/phprbac",
 	"type" : "library",
-	"description" : "OWASP/phprnac的修改版",
+	"description" : "OWASP/phprbac的修改版",
 	"keywords" : [
 		"rbac",
+		"owasp",
+		"permission",
 		"security"
 	],
-	"homepage" : "",
+	"require": {
+		"php": ">=5.3",
+		"ext-PDO": "*",
+		"ext-sqlite3": "*",
+		"ext-mysqli": "*"
+	},
+	"homepage" : "http://phprbac.net/",
 	"license" : "Apache-2.0",
 	"authors" : [
+		{
+			"name" : "AbiusX",
+			"email" : "me@abiusx.com",
+			"homepage" : "http://abiusx.com/",
+			"role" : "Lead Developer"
+		}, {
+			"name" : "Jesse Burns",
+			"email" : "jesse.burns@alliancecms.com",
+			"homepage" : "http://www.jbwebware.com",
+			"role" : "Developer"
+		},
 		{
           "name" : "longfei.he",
           "email" : "hlf513@gmail.com",
           "homepage" : "http://www.helongfei.com",
-          "role" : "Developer"
+          "role" : "Improver"
 		}
 	],
 	"autoload" : {

@@ -19,5 +19,8 @@
     * object : PDO | mysqli
 4. 其他
     * 未定义变量的初始化
+    
+## 安装
+> composer require hlf513/phprbac
 
 
