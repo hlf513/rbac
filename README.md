@@ -1,4 +1,4 @@
-#PHP-RBAC v2.0 develop 修正版
+#PHP-RBAC v2.0 修正版
 
 使用方法见:[http://phprbac.net](http://phprbac.net)
 

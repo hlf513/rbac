@@ -1,7 +1,7 @@
 {
 	"name" : "hlf513/phprbac",
 	"type" : "library",
-	"description" : "OWASP/phprbac的修改版",
+	"description" : "OWASP/phprbac的修改版。修复了一些bug,并对数据库配置的获取做了调整",
 	"keywords" : [
 		"rbac",
 		"owasp",
