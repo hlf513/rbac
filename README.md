@@ -5,11 +5,11 @@
 ##修改的地方
 1. 规范了注释
 2. 修改了bug
-    * base.php中的delete()方法: 
-        > $this->left => $this->Left
-    * rbac.php中\BascRbac的descendants()方法:
-        > //$out [$v['Title']] = $v;    
-         $out [] = $v;
+    * base.php中的delete()方法:   
+      > $this->left => $this->Left
+    * rbac.php中\BascRbac的descendants()方法:  
+      > //$out [$v['Title']] = $v;    
+      > $out [] = $v;
 3. 增加了数据库配置的参数化
     > $rbac = new \PhpRbac\Rbac($db->pdo,'phprbac_');
     
