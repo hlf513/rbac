@@ -338,7 +338,7 @@ abstract class BaseRbac extends JModel
 		$out = array ();
 		if (is_array ( $res ))
 			foreach ( $res as $v )
-				$out [$v ['Title']] = $v;
+				$out [] = $v;
 		return $out;
 	}
 
