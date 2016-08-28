@@ -18,7 +18,7 @@ interface ExtendedNestedSet extends NestedSetInterface
 
 	function depthConditional($ConditionString);
 	function parentNodeConditional($ConditionString);
-	function siblingConditional($SiblingDistance=1,$ConditionString);
+//	function siblingConditional($SiblingDistance=1,$ConditionString);
 	/**/
 }
 /**
@@ -59,7 +59,7 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
     /**
      * Returns the ID of a node based on a SQL conditional string
      * It accepts other params in the PreparedStatements format
-     * @param string $Condition the SQL condition, such as Title=?
+     * @param string $ConditionString the SQL condition, such as Title=?
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
      * @return Integer ID
      */
@@ -78,9 +78,9 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
     /**
      * Returns the record of a node based on a SQL conditional string
      * It accepts other params in the PreparedStatements format
-     * @param String $Condition
+     * @param String $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-     * @return Array Record
+     * @return array Record
      */
     function getRecord($ConditionString,$Rest=null)
     {
@@ -116,17 +116,18 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
      * @param Integer $SiblingDistance from current node (negative or positive)
      * @param string $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-     * @return Array Node on success, null on failure
+     * @return array Node on success, null on failure
      */
     function siblingConditional($SiblingDistance=1,$ConditionString,$Rest=null)
     {
         $Arguments=func_get_args();
-        $ConditionString=$ConditionString; //prevent warning
+//        $ConditionString = $ConditionString; //prevent warning
         array_shift($Arguments); //Rid $SiblingDistance
         $Parent=call_user_func_array(array($this,"parentNodeConditional"),$Arguments);
         $Siblings=$this->children($Parent[$this->id()]);
         if (!$Siblings) return null;
         $ID=call_user_func_array(array($this,"getID"),$Arguments);
+	    $n = 0;
         foreach ($Siblings as &$Sibling)
         {
             if ($Sibling[$this->id()]==$ID) break;
@@ -139,7 +140,7 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
      * Note: this uses path
      * @param string $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-     * @return Array parentNode (null on failure)
+     * @return array parentNode (null on failure)
      * @seealso path
      */
     function parentNodeConditional($ConditionString,$Rest=null)
@@ -182,12 +183,16 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
         $this->unlock();
         return $count==1;
     }
-    /**
-     * Deletes a node and all its descendants
-     *
-     * @param String $ConditionString
-     * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-     */
+
+	/**
+	 * Deletes a node and all its descendants
+	 *
+	 * @param String $ConditionString
+	 * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for
+	 *                     each ? in condition
+	 *
+	 * @return bool
+	 */
     function deleteSubtreeConditional($ConditionString,$Rest=null)
     {
 		$this->lock();
@@ -219,13 +224,14 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
      * Returns all descendants of a node
      * Note: use only a sinlge condition here
      * @param boolean $AbsoluteDepths to return Depth of sub-tree from zero or absolutely from the whole tree
-     * @param string $Condition
+     * @param string $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-	 * @return Rowset including Depth field
+	 * @return mixed Rowset including Depth field
 	 * @seealso children
      */
     function descendantsConditional($AbsoluteDepths=false,$ConditionString,$Rest=null)
     {
+    	$DepthConcat = '';
         if (!$AbsoluteDepths)
             $DepthConcat="- (sub_tree.innerDepth )";
         $Arguments=func_get_args();
@@ -263,7 +269,7 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
      * Note: use only a sinlge condition here
      * @param string $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-     * @return Rowset not including Depth
+     * @return mixed Rowset not including Depth
      * @seealso descendants
      */
     function childrenConditional($ConditionString,$Rest=null)
@@ -303,19 +309,21 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
      * Note: use a single condition, or supply "node." before condition fields.
      * @param string $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-     * @return Rowset nodes in path
+     * @return mixed Rowset nodes in path
      */
     function pathConditional($ConditionString,$Rest=null)
     {
         $Arguments=func_get_args();
         array_shift($Arguments);
-        $Query="
+        $Query=<<<TAG
+
             SELECT parent.*
             FROM {$this->table()} AS node,
             {$this->table()} AS parent
             WHERE node.{$this->left()} BETWEEN parent.{$this->left()} AND parent.{$this->right()}
             AND ( node.$ConditionString )
-            ORDER BY parent.{$this->left()}";
+            ORDER BY parent.{$this->left()}
+TAG;
 
         array_unshift($Arguments,$Query);
         $Res=call_user_func_array("Jf::sql",$Arguments);
@@ -327,7 +335,7 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
      *	Note: if you don' specify $PID, There would be one less AND in the SQL Query
      * @param String $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
-     * @return Rowset Leaves
+     * @return mixed Rowset Leaves
      */
     function leavesConditional($ConditionString=null,$Rest=null)
     {
@@ -409,7 +417,7 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
     /**
      * Adds a child to the beginning of a node's children
      *
-     * @param Array $FieldValueArray key-paired field-values to insert
+     * @param array $FieldValueArray key-paired field-values to insert
      * @param string $ConditionString of the parent node
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
      * @return Integer ChildID
@@ -457,7 +465,7 @@ class FullNestedSet extends BaseNestedSet implements ExtendedNestedSet
     /**
      * Edits a node
      *
-     * @param Array $FieldValueArray Pairs of Key/Value as Field/Value in the table to edit
+     * @param array $FieldValueArray Pairs of Key/Value as Field/Value in the table to edit
      * @param string $ConditionString
      * @param string $Rest optional, rest of variables to fill in placeholders of condition string, one variable for each ? in condition
      * @return Integer SiblingID

@@ -81,11 +81,12 @@ abstract class BaseRbac extends JModel
 	 * Will not replace or create siblings if a component exists.
 	 *
 	 * @param string $Path
-	 *        	such as /some/role/some/where - Must begin with a / (slash)
-	 * @param array $Descriptions
-	 *        	array of descriptions (will add with empty description if not available)
+	 *            such as /some/role/some/where - Must begin with a / (slash)
+	 * @param array  $Descriptions
+	 *            array of descriptions (will add with empty description if not available)
 	 *
-	 * @return integer Number of nodes created (0 if none created)
+	 * @return int Number of nodes created (0 if none created)
+	 * @throws \Exception
 	 */
 	function addPath($Path, array $Descriptions = null)
 	{
@@ -157,9 +158,12 @@ abstract class BaseRbac extends JModel
 	 * Returns ID of a path
 	 *
 	 * @todo this has a limit of 1000 characters on $Path
+	 *
 	 * @param string $Path
-	 *        	such as /role1/role2/role3 ( a single slash is root)
-	 * @return integer NULL
+	 *            such as /role1/role2/role3 ( a single slash is root)
+	 *
+	 * @return int NULL
+	 * @throws \Exception
 	 */
 	public function pathId($Path)
 	{
@@ -191,31 +195,6 @@ abstract class BaseRbac extends JModel
 			return $res [0] ['ID'];
 		else
 			return null;
-			// TODO: make the below SQL work, so that 1024 limit is over
-
-		$QueryBase = ("SELECT n0.ID  \nFROM {$this->tablePrefix()}{$this->type()} AS n0");
-		$QueryCondition = "\nWHERE 	n0.Title=?";
-
-		for($i = 1; $i < count ( $Parts ); ++ $i)
-		{
-			$j = $i - 1;
-			$QueryBase .= "\nJOIN 		{$this->tablePrefix()}{$this->type()} AS n{$i} ON (n{$j}.Lft BETWEEN n{$i}.Lft+1 AND n{$i}.Rght)";
-			$QueryCondition .= "\nAND 	n{$i}.Title=?";
-			// Forcing middle elements
-			$QueryBase .= "\nLEFT JOIN 	{$this->tablePrefix()}{$this->type()} AS nn{$i} ON (nn{$i}.Lft BETWEEN n{$i}.Lft+1 AND n{$j}.Lft-1)";
-			$QueryCondition .= "\nAND 	nn{$i}.Lft IS NULL";
-		}
-		$Query = $QueryBase . $QueryCondition;
-		$PartsRev = array_reverse ( $Parts );
-		array_unshift ( $PartsRev, $Query );
-
-		print_ ( $PartsRev );
-		$res = call_user_func_array ( "Jf::sql", $PartsRev );
-
-		if ($res)
-			return $res [0] ['ID'];
-		else
-			return null;
 	}
 
 	/**
@@ -233,6 +212,8 @@ abstract class BaseRbac extends JModel
 	 * Return the whole record of a single entry (including Rght and Lft fields)
 	 *
 	 * @param integer $ID
+	 *
+	 * @return mixed
 	 */
 	protected function getRecord($ID)
 	{
@@ -296,9 +277,10 @@ abstract class BaseRbac extends JModel
 	 * Edits an entity, changing title and/or description. Maintains Id.
 	 *
 	 * @param integer $ID
-	 * @param string $NewTitle
-	 * @param string $NewDescription
+	 * @param string  $NewTitle
+	 * @param string  $NewDescription
 	 *
+	 * @return bool
 	 */
 	function edit($ID, $NewTitle = null, $NewDescription = null)
 	{
@@ -379,7 +361,6 @@ abstract class BaseRbac extends JModel
 		if ($Ensure !== true)
 		{
 			throw new \Exception ("You must pass true to this function, otherwise it won't work.");
-			return;
 		}
 		$res = Jf::sql ( "DELETE FROM {$this->tablePrefix()}{$this->type()}" );
 		$Adapter = get_class(Jf::$Db);
@@ -472,15 +453,16 @@ abstract class BaseRbac extends JModel
 	 * mostly used for testing
 	 *
 	 * @param boolean $Ensure
-	 *        	must be set to true or throws an \Exception
+	 *            must be set to true or throws an \Exception
+	 *
 	 * @return number of deleted assignments
+	 * @throws \Exception
 	 */
 	function resetAssignments($Ensure = false)
 	{
 		if ($Ensure !== true)
 		{
 			throw new \Exception ("You must pass true to this function, otherwise it won't work.");
-			return;
 		}
 		$res = Jf::sql ( "DELETE FROM {$this->tablePrefix()}rolepermissions" );
 
@@ -521,19 +503,19 @@ class RbacManager extends JModel
 
     /**
      *
-     * @var \Jf\PermissionManager
+     * @var PermissionManager
      */
     public $Permissions;
 
     /**
      *
-     * @var \Jf\RoleManager
+     * @var RoleManager
      */
     public $Roles;
 
     /**
      *
-     * @var \Jf\RbacUserManager
+     * @var RbacUserManager
      */
     public $Users;
 
@@ -628,16 +610,17 @@ class RbacManager extends JModel
         return $Res [0] ['Result'] >= 1;
     }
 
-    /**
-    * Enforce a permission on a user
-    *
-    * @param string|integer $Permission
-    *        	path or title or ID of permission
-    *
-    * @param integer $UserID
-    *
-    * @throws RbacUserNotProvidedException
-    */
+	/**
+	 * Enforce a permission on a user
+	 *
+	 * @param string|integer $Permission
+	 *            path or title or ID of permission
+	 *
+	 * @param integer        $UserID
+	 *
+	 * @return bool
+	 * @throws RbacUserNotProvidedException
+	 */
 	function enforce($Permission, $UserID = null)
 	{
 	if ($UserID === null)
@@ -651,26 +634,27 @@ class RbacManager extends JModel
         return true;
 	}
 
-    /**
-    * Remove all roles, permissions and assignments
-    * mostly used for testing
-    *
-    * @param boolean $Ensure
-	*        	must set or throws error
-	* @return boolean
-    */
+	/**
+	 * Remove all roles, permissions and assignments
+	 * mostly used for testing
+	 *
+	 * @param boolean $Ensure
+	 *            must set or throws error
+	 *
+	 * @return bool
+	 * @throws \Exception
+	 */
     function reset($Ensure = false)
     {
         if ($Ensure !== true) {
             throw new \Exception ("You must pass true to this function, otherwise it won't work.");
-            return;
         }
 
         $res = true;
-        $res = $res and $this->Roles->resetAssignments ( true );
-        $res = $res and $this->Roles->reset ( true );
-		$res = $res and $this->Permissions->reset ( true );
-		$res = $res and $this->Users->resetAssignments ( true );
+        $this->Roles->resetAssignments ( true );
+        $this->Roles->reset ( true );
+		$this->Permissions->reset ( true );
+		$this->Users->resetAssignments ( true );
 
 		return $res;
 	}
@@ -713,10 +697,11 @@ class PermissionManager extends BaseRbac
 	 * Remove permissions from system
 	 *
 	 * @param integer $ID
-	 *        	permission id
+	 *            permission id
 	 * @param boolean $Recursive
-	 *        	delete all descendants
+	 *            delete all descendants
 	 *
+	 * @return bool
 	 */
 	function remove($ID, $Recursive = false)
 	{
@@ -748,7 +733,7 @@ class PermissionManager extends BaseRbac
 	 *        	Id, Title, Path
 	 * @param boolean $OnlyIDs
 	 *        	if true, result will be a 1D array of IDs
-	 * @return Array 2D or 1D or null
+	 * @return array 2D or 1D or null
 	 */
 	function roles($Permission, $OnlyIDs = true)
 	{
@@ -815,10 +800,11 @@ class RoleManager extends BaseRbac
 	 * Remove roles from system
 	 *
 	 * @param integer $ID
-	 *        	role id
+	 *            role id
 	 * @param boolean $Recursive
-	 *        	delete all descendants
+	 *            delete all descendants
 	 *
+	 * @return bool
 	 */
 	function remove($ID, $Recursive = false)
 	{
@@ -903,7 +889,7 @@ class RoleManager extends BaseRbac
 	 *        	ID
 	 * @param boolean $OnlyIDs
 	 *        	if true, result would be a 1D array of IDs
-	 * @return Array 2D or 1D or null
+	 * @return array 2D or 1D or null
 	 *         the two dimensional array would have ID,Title and Description of permissions
 	 */
 	function permissions($Role, $OnlyIDs = true)
@@ -952,7 +938,7 @@ class RbacUserManager extends JModel
 	 *
 	 * @param integer|string $Role
 	 *        	id, title or path
-	 * @param integer $User
+	 * @param integer $UserID
 	 *        	UserID, not optional
 	 *
 	 * @throws RbacUserNotProvidedException
@@ -1093,15 +1079,16 @@ class RbacUserManager extends JModel
 	 * mostly used for testing
 	 *
 	 * @param boolean $Ensure
-	 *        	must set to true or throws an Exception
+	 *            must set to true or throws an Exception
+	 *
 	 * @return number of deleted relations
+	 * @throws \Exception
 	 */
 	function resetAssignments($Ensure = false)
 	{
 		if ($Ensure !== true)
 		{
 			throw new \Exception ("You must pass true to this function, otherwise it won't work.");
-			return;
 		}
 		$res = Jf::sql ( "DELETE FROM {$this->tablePrefix()}userroles" );
 

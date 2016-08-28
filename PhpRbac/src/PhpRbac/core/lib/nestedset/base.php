@@ -104,13 +104,14 @@ class BaseNestedSet implements NestedSetInterface
      * Note: this is a heavy function on nested sets, uses both children (which is quite heavy) and path
      * @param Integer $ID
      * @param Integer $SiblingDistance from current node (negative or positive)
-     * @return Array Node on success, null on failure 
+     * @return array Node on success, null on failure
      */
     function sibling($ID,$SiblingDistance=1)
     {
         $Parent=$this->parentNode($ID);
         $Siblings=$this->children($Parent[$this->id()]);
         if (!$Siblings) return null;
+	    $n = 0;
         foreach ($Siblings as &$Sibling)
         {
             if ($Sibling[$this->id()]==$ID) break;
@@ -122,7 +123,7 @@ class BaseNestedSet implements NestedSetInterface
      * Returns the parent of a node
      * Note: this uses path
      * @param Integer $ID
-     * @return Array parentNode (null on failure)
+     * @return array parentNode (null on failure)
      * @seealso path
      */
     function parentNode($ID)
@@ -131,11 +132,14 @@ class BaseNestedSet implements NestedSetInterface
         if (count($Path)<2) return null;
         else return $Path[count($Path)-2];        
     }
+
 	/**
-     * Deletes a node and shifts the children up
-     *
-     * @param Integer $ID
-     */
+	 * Deletes a node and shifts the children up
+	 *
+	 * @param Integer $ID
+	 *
+	 * @return array|int|null
+	 */
     function delete($ID)
     {
         $Info=Jf::sql("SELECT {$this->left()} AS `Left`,{$this->right()} AS `Right` 
@@ -148,18 +152,21 @@ class BaseNestedSet implements NestedSetInterface
 
 
         Jf::sql("UPDATE {$this->table()} SET {$this->right()} = {$this->right()} - 1, `".
-            $this->left."` = {$this->left()} - 1 WHERE {$this->left()} BETWEEN ? AND ?",$Info["Left"],$Info["Right"]);
+            $this->Left."` = {$this->left()} - 1 WHERE {$this->left()} BETWEEN ? AND ?",$Info["Left"],$Info["Right"]);
         Jf::sql("UPDATE {$this->table()} SET {$this->right()} = {$this->right()} - 2 WHERE `".
             $this->Right."` > ?",$Info["Right"]);
         Jf::sql("UPDATE {$this->table()} SET {$this->left()} = {$this->left()} - 2 WHERE `".
-            $this->left."` > ?",$Info["Right"]);
+            $this->Left."` > ?",$Info["Right"]);
         return $count;
     }
-    /**
-     * Deletes a node and all its descendants
-     *
-     * @param Integer $ID
-     */
+
+	/**
+	 * Deletes a node and all its descendants
+	 *
+	 * @param Integer $ID
+	 *
+	 * @return array|int|null
+	 */
     function deleteSubtree($ID)
     {
         $Info=Jf::sql("SELECT {$this->left()} AS `Left`,{$this->right()} AS `Right` ,{$this->right()}-{$this->left()}+ 1 AS Width
@@ -186,13 +193,14 @@ class BaseNestedSet implements NestedSetInterface
      *
      * @param Integer $ID
      * @param Boolean $AbsoluteDepths to return Depth of sub-tree from zero or absolutely from the whole tree  
-	 * @return Rowset including Depth field
+	 * @return mixed Rowset including Depth field
 	 * @seealso children
      */
     function descendants($ID,$AbsoluteDepths=false)
     {
-           if (!$AbsoluteDepths)
-               $DepthConcat="- (sub_tree.depth )";
+    	$DepthConcat = '';
+	    if (!$AbsoluteDepths)
+		    $DepthConcat="- (sub_tree.depth )";
         $Res=Jf::sql("
             SELECT node.*, (COUNT(parent.{$this->id()})-1 $DepthConcat ) AS Depth
             FROM {$this->table()} AS node,
@@ -219,7 +227,7 @@ class BaseNestedSet implements NestedSetInterface
      * Returns immediate children of a node
      * Note: this function performs the same as descendants but only returns results with Depth=1
      * @param Integer $ID
-     * @return Rowset not including Depth
+     * @return mixed Rowset not including Depth
      * @seealso descendants
      */
     function children($ID)
@@ -254,7 +262,7 @@ class BaseNestedSet implements NestedSetInterface
      * Returns the path to a node, including the node
      *
      * @param Integer $ID
-     * @return Rowset nodes in path
+     * @return mixed Rowset nodes in path
      */
     function path($ID)
     {
@@ -272,7 +280,7 @@ class BaseNestedSet implements NestedSetInterface
      * Finds all leaves of a parent
      *	Note: if you don' specify $PID, There would be one less AND in the SQL Query
      * @param Integer $PID
-     * @return Rowset Leaves
+     * @return mixed Rowset Leaves
      */
     function leaves($PID=null)
     {
@@ -339,7 +347,7 @@ class BaseNestedSet implements NestedSetInterface
     /**
      * Retrives the full tree including Depth field.
      *
-     * @return 2DArray Rowset
+     * @return array 2DArray Rowset
      */
     function fullTree()
     {
@@ -354,8 +362,8 @@ class BaseNestedSet implements NestedSetInterface
     /**
      * This function converts a 2D array with Depth fields into a multidimensional tree in an associative array
      *
-     * @param Array $Result
-     * @return Array Tree
+     * @param array $Result
+     * @return array Tree
      */
     #FIXME: think how to implement this!
     /**
