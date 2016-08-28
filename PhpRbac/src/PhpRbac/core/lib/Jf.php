@@ -45,11 +45,12 @@ class Jf
 		$args = func_get_args ();
 		if (get_class ( self::$Db ) == "PDO")
 			return call_user_func_array ( "self::sqlPdo", $args );
+		else if (get_class ( self::$Db ) == "mysqli")
+			return call_user_func_array ( "self::sqlMysqli", $args );
+		else if (is_object(self::$Db))
+			return call_user_func_array ( "self::sqlObj", $args );
 		else
-			if (get_class ( self::$Db ) == "mysqli")
-				return call_user_func_array ( "self::sqlMysqli", $args );
-			else
-				throw new Exception ( "Unknown database interface type." );
+			throw new Exception ( "Unknown database interface type." );
 	}
 
 	static function sqlPdo($Query)
@@ -194,6 +195,25 @@ class Jf
 			else
 				return null;
 		}
+	}
+
+	/**
+	 * 调用自定义的SQL执行方法
+	 *
+	 * 为了继承到其他框架中,复用数据库链接
+	 * 注意: reset()会失效,不过生产环境也不会用到reset
+	 *
+	 * @param $Query
+	 *
+	 * @throws \Exception
+	 */
+	static function sqlObj($Query)
+	{
+		$objName = sprintf('%s_PHPRBAC',get_class(self::$Db));
+		if(!function_exists($objName))
+			throw new Exception(sprintf('func [%s] is not found',$objName));
+
+		call_user_func($objName,$Query);
 	}
 
 	static function time()
