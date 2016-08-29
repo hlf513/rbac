@@ -18,7 +18,7 @@ interface ExtendedNestedSet extends NestedSetInterface
 
 	function depthConditional($ConditionString);
 	function parentNodeConditional($ConditionString);
-//	function siblingConditional($SiblingDistance=1,$ConditionString);
+	function siblingConditional($SiblingDistance=1,$ConditionString);
 	/**/
 }
 /**
