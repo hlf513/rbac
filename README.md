@@ -1,8 +1,8 @@
-#PHP-RBAC v2.0 修正版
+# PHP-RBAC v2.0 修正版
 
 使用方法见:[http://phprbac.net](http://phprbac.net)
 
-##修改的地方
+## 修改的地方
 1. 规范了注释
 2. 修改了bug
     * base.php中的delete()方法:   
